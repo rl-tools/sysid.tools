@@ -41,6 +41,7 @@ export class PickRangeStep{
         if(event.event == "files-processed"){
             this.parent.removeChild(this.container)
             this.container = document.createElement('div')
+            this.container.style.textAlign = "center"
             this.pick_thrust_header = document.createElement('h1')
             this.pick_thrust_header.style.textAlign = "center"
             this.pick_thrust_header.textContent = this.title
@@ -100,8 +101,11 @@ export class PickRangeStep{
                 window.addEventListener('resize', resizeCanvas);
                 resize_canvas_functions.push(resizeCanvas)
             }
-            const range_input_submit = document.createElement('button')
-            range_input_submit.textContent = "Set"
+            const range_input_submit = document.createElement('input')
+            range_input_submit.type = "button"
+            range_input_submit.value = "Set Ranges"
+            range_input_submit.classList.add("fancy-button")
+            range_input_submit.classList.add("fancy-button-small")
 
             this.container.appendChild(range_input_submit)
             this.container.appendChild(document.createElement('br'))

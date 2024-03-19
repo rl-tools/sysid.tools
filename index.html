@@ -4,6 +4,20 @@
     <head>
     </head>
     <body>
+        <div class="container" id="container-body">
+            <div class="info-container" style="margin-bottom: 1px">
+                <div class="info-box">
+                    <h3 style="margin: 2px; padding: 20px; text-align: center;">
+                        System Identification Utility for Quadrotors</h3>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <a class="fancy-button fancy-button-small" id="arxiv-button" href="https://arxiv.org/abs/2306.03530">Paper on arXiv</a>
+                <a class="fancy-button fancy-button-small" id="documentation-button" href="https://docs.rl.tools">Documentation</a>
+                <a class="fancy-button fancy-button-small" id="github-button" href="https://github.com/arplaboratory/data-driven-system-identification">Code on Github</a>
+                <!-- <a class="github-button" href="https://github.com/RLtools/RLtools" aria-label="Code on Github">Code on Github</a> -->
+            </div>
+        </div>
     </body>
   <script type="module">
     import Module from './blob/build/output.mjs';
@@ -15,7 +29,8 @@
     import {PickRangeStep} from './steps/4-pick-range.js';
     import {ExtractTimeframesStep} from './steps/5-extract-timeframes.js';
     import {FindTauStep} from './steps/6-find-tau.js';
-    const debug = true
+    // const debug = true
+    const debug = false
     const motor_command_topic = "actuator_motors_mux";
     const globals = {debug}
     globals["module"] = Module().then(m =>{
@@ -38,63 +53,100 @@
             setTimeout(resolve, 100);
         })
     }
-    async function log(message){
-        console.log(message);
-        const message_element = document.createElement("div")
-        message_element.textContent = message;
-        document.body.appendChild(message_element);
-        await yield_some();
-    }
     class Spoiler{
-        constructor(parent, title, behavior={}){
+        constructor(parent, title, full_width, behavior={}){
             const defaultBehavior = {
                 open_on: [],
                 close_on: []
             }
-            this.container = document.createElement('details');
-            this.container.open = false;
+            this.outer_container = document.createElement('div');
+            this.outer_container.style["box-sizing"] = "border-box";
+            this.outer_container.style["padding-left"] = "20px"
+            this.outer_container.style["padding-right"] = "20px"
+            this.outer_container.style.display = "block";
+            this.outer_container.classList.add('container');
+            if(full_width){
+                this.outer_container.style.width = "100%";
+                this.outer_container.style["max-width"] = "100%";
+            }
+            this.container = document.createElement('div');
+            this.container.style.padding = "10px";
+            this.details = document.createElement('details');
+            this.details.classList.add('info-box');
+            this.details.open = false;
+            this.details.style.padding = "5px";
             const summary = document.createElement('summary');
             summary.textContent = title;
-            this.container.appendChild(summary);
-            parent.appendChild(this.container);
+            this.details.appendChild(summary);
+            this.outer_container.appendChild(this.details);
+            this.details.appendChild(this.container);
+            parent.appendChild(this.outer_container);
             this.behavior = {...defaultBehavior, ...behavior}
+            this.events_received = []
         }
         callback(event){
-            if(this.behavior.open_on.includes(event.event)){
-                this.container.open = true
+            if(!this.behavior.open_on.includes(event.event) && !this.behavior.close_on.includes(event.event)){
+                return
             }
-            else{
-                if(this.behavior.close_on.includes(event.event)){
-                    this.container.open = false
+            let pre_triggered_open = true;
+            for(const opening_event of this.behavior.open_on){
+                if(!this.events_received.includes(opening_event)){
+                    pre_triggered_open = false;
                 }
+            }
+            let pre_triggered_close = true;
+            for(const closing_event of this.behavior.close_on){
+                if(!this.events_received.includes(closing_event)){
+                    pre_triggered_close = false;
+                }
+            }
+            this.events_received.push(event.event)
+            let post_trigger_open = true;
+            for(const opening_event of this.behavior.open_on){
+                if(!this.events_received.includes(opening_event)){
+                    post_trigger_open = false;
+                }
+            }
+            if(!pre_triggered_open && post_trigger_open){
+                this.details.open = true
+            }
+            let post_trigger_close = true;
+            for(const closing_event of this.behavior.close_on){
+                if(!this.events_received.includes(closing_event)){
+                    post_trigger_close = false;
+                }
+            }
+            if(!pre_triggered_close && post_trigger_close){
+                this.details.open = false
             }
         }
     }
     async function main() {
+        const container_body = document.body; //document.getElementById("container-body");
 
-        const model_specification_container = new Spoiler(document.body, "Model Specification", {close_on: ["model"]});
+        const model_specification_container = new Spoiler(container_body, "Model Specification", false, {close_on: ["model"]});
         const model_specification_step = new ModelSpecificationStep(globals, model_specification_container.container, default_model);
         model_specification_step.registerListener(model_specification_container)
         model_specification_container.container.open = true;
 
-        const file_selection_container = new Spoiler(document.body, "File Selection", {open_on: ["model"], close_on: ["files"]});
+        const file_selection_container = new Spoiler(container_body, "File Selection", false, {open_on: ["model"], close_on: ["files"]});
         model_specification_step.registerListener(file_selection_container)
         const file_selection_step = new FileSelectionStep(globals, file_selection_container.container);
         model_specification_step.registerListener(file_selection_step)
         file_selection_step.registerListener(file_selection_container)
 
-        const file_processing_step = new FileProcessingStep(globals, document.body, motor_command_topic);
+        const file_processing_step = new FileProcessingStep(globals, container_body, motor_command_topic);
         model_specification_step.registerListener(file_processing_step)
         file_selection_step.registerListener(file_processing_step)
 
-        const pick_ranges_thrust_container = new Spoiler(document.body, "Pick Ranges (Thrust)", {open_on: ["files-processed"], close_on: ["ranges-thrust"]});
+        const pick_ranges_thrust_container = new Spoiler(container_body, "Pick Ranges (Thrust)", true, {open_on: ["files-processed"], close_on: ["ranges-thrust"]});
         file_processing_step.registerListener(pick_ranges_thrust_container)
         const pick_ranges_thrust_title = "Select the time ranges for the thrust curve estimation (up/down accelerations)"
         const pick_ranges_thrust_step = new PickRangeStep(globals, pick_ranges_thrust_container.container, pick_ranges_thrust_title, "ranges-thrust");
         file_processing_step.registerListener(pick_ranges_thrust_step)
         pick_ranges_thrust_step.registerListener(pick_ranges_thrust_container)
 
-        const pick_ranges_inertia_roll_pitch_container = new Spoiler(document.body, "Pick Ranges (Inertia Roll/Pitch)", {open_on: ["ranges-thrust"], close_on: ["ranges-inertia-roll-pitch"]});
+        const pick_ranges_inertia_roll_pitch_container = new Spoiler(container_body, "Pick Ranges (Inertia Roll/Pitch)", true, {open_on: ["ranges-thrust"], close_on: ["ranges-inertia-roll-pitch"]});
         pick_ranges_thrust_step.registerListener(pick_ranges_inertia_roll_pitch_container)
         file_processing_step.registerListener(pick_ranges_inertia_roll_pitch_container)
         const pick_ranges_inertia_roll_pitch_title = "Select the time ranges for the inertia (roll/pitch) estimation (front/back and left/right accelerations)"
@@ -103,7 +155,7 @@
         // pick_ranges_thrust_step.registerListener(pick_ranges_inertia_roll_pitch_step)
         pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_roll_pitch_container)
 
-        const pick_ranges_inertia_yaw_container = new Spoiler(document.body, "Pick Ranges (Inertia Yaw)", {open_on: ["ranges-inertia-roll-pitch"], close_on: ["ranges-inertia-yaw"]});
+        const pick_ranges_inertia_yaw_container = new Spoiler(container_body, "Pick Ranges (Inertia Yaw)", true, {open_on: ["ranges-inertia-roll-pitch"], close_on: ["ranges-inertia-yaw"]});
         pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_yaw_container)
         file_processing_step.registerListener(pick_ranges_inertia_yaw_container)
         const pick_ranges_inertia_yaw_title = "Select the time ranges for the inertia (yaw) estimation (front/back and left/right accelerations)"
@@ -113,21 +165,22 @@
         pick_ranges_inertia_yaw_step.registerListener(pick_ranges_inertia_yaw_container)
 
 
-        const extract_timeframes_thrust_step = new ExtractTimeframesStep(globals, document.body, "ranges-thrust", "thrust-timeframes");
+        const extract_timeframes_thrust_step = new ExtractTimeframesStep(globals, container_body, "ranges-thrust", "thrust-timeframes");
         file_processing_step.registerListener(extract_timeframes_thrust_step)
         pick_ranges_thrust_step.registerListener(extract_timeframes_thrust_step)
 
 
-        const find_tau_container = new Spoiler(document.body, "Find Tau");
-        find_tau_container.container.open = true
+        const find_tau_container = new Spoiler(container_body, "Find Tau", false, {open_on: ["model", "thrust-timeframes"]});
         const find_tau_step = new FindTauStep(globals, find_tau_container.container);
         model_specification_step.registerListener(find_tau_step)
         extract_timeframes_thrust_step.registerListener(find_tau_step)
+        model_specification_step.registerListener(find_tau_container)
+        extract_timeframes_thrust_step.registerListener(find_tau_container)
 
         await globals.module;
 
         console.log("Finished setup")
-        model_specification_step.maybeTriggerDebugChain()
+        // model_specification_step.maybeTriggerDebugChain()
 
 
 

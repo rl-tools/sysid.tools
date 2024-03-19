@@ -5,15 +5,31 @@ export class FileSelectionStep{
         this.globals = globals
         this.parent = parent
         this.container = document.createElement('div')
+        this.container.style.textAlign = "center"
+        this.file_input_ghost = document.createElement('input');
+        this.file_input_ghost.type = 'file';
+        this.file_input_ghost.multiple = true;
+        this.file_input_ghost.style.display = "none";
+
         this.file_input = document.createElement('input');
-        this.file_input.type = 'file';
-        this.file_input.multiple = true;
-        this.file_input_label = document.createElement('label');
-        this.file_input_label.textContent = "Select ULog files";
-        this.file_input_label.htmlFor = this.file_input.id;
-        this.use_example_log_button = document.createElement('button');
-        this.use_example_log_button.textContent = "Use example log";
-        this.container.appendChild(this.file_input_label);
+        this.file_input.type = 'button';
+        this.file_input.value = "Select File(s)"
+        this.file_input.classList.add("fancy-button")
+        this.file_input.classList.add("fancy-button-small")
+        this.file_input.addEventListener('click', () => {
+            this.file_input_ghost.click();
+        });
+        
+        // this.file_input_label = document.createElement('label');
+        // this.file_input_label.textContent = "Select ULog files";
+        // this.file_input_label.htmlFor = this.file_input.id;
+        this.use_example_log_button = document.createElement('input')
+        this.use_example_log_button.type = "button"
+        this.use_example_log_button.value = "Use Example Logs"
+        this.use_example_log_button.classList.add("fancy-button")
+        this.use_example_log_button.classList.add("fancy-button-small")
+        // this.container.appendChild(this.file_input_label);
+        this.container.appendChild(this.file_input_ghost);
         this.container.appendChild(this.file_input);
         this.container.appendChild(this.use_example_log_button);
         this.container.appendChild(document.createElement('br'));
@@ -22,7 +38,7 @@ export class FileSelectionStep{
         this.loading_message.style.display = "none";
         this.container.appendChild(this.loading_message);
         this.parent.appendChild(this.container);
-        this.file_input.addEventListener('change', this.fileChangeCallback.bind(this));
+        this.file_input_ghost.addEventListener('change', this.fileChangeCallback.bind(this));
         this.use_example_log_button.addEventListener('click', this.exampleButtonCallback.bind(this));
 
         this.listeners = []
@@ -60,7 +76,6 @@ export class FileSelectionStep{
         const files = event.target.files; 
         const promises = Array.from(files).map(file => readFileAsArrayBuffer(file));
         const buffers = await Promise.all(promises)
-        const ulg_log_files = await Promise.all(this.example_files.map(fetchOne))
         this.loading_message.style.display = "none";
         this.sendFiles(buffers);
     }

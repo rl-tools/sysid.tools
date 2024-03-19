@@ -8,3 +8,133 @@
     height: 100%;
     display: block;
 } */
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    width: 90%;
+    max-width: 900px;
+    margin-bottom: 2em;
+}
+.info-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 1em;
+    margin-bottom: 3em;
+}
+
+.info-box{
+    font-family: "Open Sans", sans-serif;
+    /* padding: 20px 20px; */
+    border: none;
+    border-radius: 20px;
+    background: #fff;
+    color: #000000;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease-in-out;
+    outline: none;
+    width: 100%;
+}
+
+.fancy-button {
+    display: inline-block;
+    margin: 5px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-decoration: none;
+    letter-spacing: 2px;
+    padding: 20px 40px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(to right, #6fd0cb, #7DB9B6);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+.fancy-button:hover, .car-input:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+
+.fancy-button:disabled, .car-input:disabled {
+    background: linear-gradient(to right, #cccccc, #dddddd);
+    color: #666666;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+
+.fancy-button-small, .car-input {
+    letter-spacing: 1px;
+    padding: 10px 20px;
+    border-radius: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    font-size: 70%;
+}
+
+.fancy-button-small:hover, .car-input:hover {
+    transform: translateY(-2.5px);
+    box-shadow: 0 4px 7.5px rgba(0, 0, 0, 0.3);
+}
+
+summary{
+    cursor: pointer;
+    padding: 10px;
+    font-weight: bold;
+    outline: none;
+    border-radius: 20px 20px 0 0; /* Match the info-box border-radius but flat at the bottom */
+    margin: 10px
+}
+
+/* When details is open, apply different styles */
+.custom-details[open] summary {
+    border-radius: 20px 20px 0 0; /* Adjusted to keep the top corners rounded when open */
+}
+
+.custom-details:not([open]) summary {
+    border-radius: 20px; /* Keep all corners rounded when closed */
+}
+
+.custom-details[open] {
+    border-radius: 20px; /* Keep the border-radius consistent when open */
+}
+
+/* Style the content inside the details */
+.custom-details > *:not(summary) {
+    padding-top: 10px;
+}
+
+
+
+textarea {
+    font-family: "Open Sans", sans-serif;
+    padding: 10px 15px; /* Adjust padding to ensure text is not too close to the edges */
+    border: none;
+    border-radius: 20px;
+    background: #fff;
+    color: #000000;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease-in-out;
+    outline: none;
+    width: calc(100% - 30px); /* Adjust width to account for padding */
+    height: 150px; /* Example height, adjust as needed */
+    resize: vertical; /* Allow vertical resizing only, remove or set to 'none' to disable */
+}
+
+textarea:focus {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly larger shadow on focus for a subtle effect */
+}
