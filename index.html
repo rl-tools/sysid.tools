@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+    <link rel="stylesheet" href="index.css">
+    <head>
+    </head>
+    <body>
+    </body>
+  <script type="module">
+    import Module from '../build/output.mjs';
+    import {fetchWithProgress} from './fetch_with_progress.js';
+    import {model as default_model} from './default_model.js';
+    import {ModelSpecificationStep} from './steps/1-specify-model.js';
+    import {FileSelectionStep} from './steps/2-file-selection.js';
+    import {FileProcessingStep} from './steps/3-process-files.js';
+    import {PickRangeStep} from './steps/4-pick-range.js';
+    import {ExtractTimeframesStep} from './steps/5-extract-timeframes.js';
+    import {FindTauStep} from './steps/6-find-tau.js';
+    const debug = true
+    const motor_command_topic = "actuator_motors_mux";
+    const globals = {debug}
+    globals["module"] = Module().then(m =>{
+        return {
+            Flight: m["Flight"],
+            MultipleFlights: m["MultipleFlights"],
+            CombinedFlights: m["CombinedFlights"],
+            MotorParameters: m["MotorParameters"],
+            load_ulog: m["load_ulog"],
+            read_flight: m["read_flight"],
+            get_flight_data: m["get_flight_data"],
+            extract_timeframes: m["extract_timeframes"],
+            slice_gaps_and_interpolate: m["slice_gaps_and_interpolate"],
+            combine: m["combine"],
+            estimate_motor_parameters: m["estimate_motor_parameters"]
+        }
+    });
+    async function yield_some(){
+        return new Promise((resolve) => {
+            setTimeout(resolve, 100);
+        })
+    }
+    async function log(message){
+        console.log(message);
+        const message_element = document.createElement("div")
+        message_element.textContent = message;
+        document.body.appendChild(message_element);
+        await yield_some();
+    }
+    class Spoiler{
+        constructor(parent, title, behavior={}){
+            const defaultBehavior = {
+                open_on: [],
+                close_on: []
+            }
+            this.container = document.createElement('details');
+            this.container.open = false;
+            const summary = document.createElement('summary');
+            summary.textContent = title;
+            this.container.appendChild(summary);
+            parent.appendChild(this.container);
+            this.behavior = {...defaultBehavior, ...behavior}
+        }
+        callback(event){
+            if(this.behavior.open_on.includes(event.event)){
+                this.container.open = true
+            }
+            else{
+                if(this.behavior.close_on.includes(event.event)){
+                    this.container.open = false
+                }
+            }
+        }
+    }
+    async function main() {
+
+        const model_specification_container = new Spoiler(document.body, "Model Specification", {close_on: ["model"]});
+        const model_specification_step = new ModelSpecificationStep(globals, model_specification_container.container, default_model);
+        model_specification_step.registerListener(model_specification_container)
+        model_specification_container.container.open = true;
+
+        const file_selection_container = new Spoiler(document.body, "File Selection", {open_on: ["model"], close_on: ["files"]});
+        model_specification_step.registerListener(file_selection_container)
+        const file_selection_step = new FileSelectionStep(globals, file_selection_container.container);
+        model_specification_step.registerListener(file_selection_step)
+        file_selection_step.registerListener(file_selection_container)
+
+        const file_processing_step = new FileProcessingStep(globals, document.body, motor_command_topic);
+        model_specification_step.registerListener(file_processing_step)
+        file_selection_step.registerListener(file_processing_step)
+
+        const pick_ranges_thrust_container = new Spoiler(document.body, "Pick Ranges (Thrust)", {open_on: ["files-processed"], close_on: ["ranges-thrust"]});
+        file_processing_step.registerListener(pick_ranges_thrust_container)
+        const pick_ranges_thrust_title = "Select the time ranges for the thrust curve estimation (up/down accelerations)"
+        const pick_ranges_thrust_step = new PickRangeStep(globals, pick_ranges_thrust_container.container, pick_ranges_thrust_title, "ranges-thrust");
+        file_processing_step.registerListener(pick_ranges_thrust_step)
+        pick_ranges_thrust_step.registerListener(pick_ranges_thrust_container)
+
+        const pick_ranges_inertia_roll_pitch_container = new Spoiler(document.body, "Pick Ranges (Inertia Roll/Pitch)", {open_on: ["ranges-thrust"], close_on: ["ranges-inertia-roll-pitch"]});
+        pick_ranges_thrust_step.registerListener(pick_ranges_inertia_roll_pitch_container)
+        file_processing_step.registerListener(pick_ranges_inertia_roll_pitch_container)
+        const pick_ranges_inertia_roll_pitch_title = "Select the time ranges for the inertia (roll/pitch) estimation (front/back and left/right accelerations)"
+        const pick_ranges_inertia_roll_pitch_step = new PickRangeStep(globals, pick_ranges_inertia_roll_pitch_container.container, pick_ranges_inertia_roll_pitch_title, "ranges-inertia-roll-pitch");
+        file_processing_step.registerListener(pick_ranges_inertia_roll_pitch_step)
+        // pick_ranges_thrust_step.registerListener(pick_ranges_inertia_roll_pitch_step)
+        pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_roll_pitch_container)
+
+        const pick_ranges_inertia_yaw_container = new Spoiler(document.body, "Pick Ranges (Inertia Yaw)", {open_on: ["ranges-inertia-roll-pitch"], close_on: ["ranges-inertia-yaw"]});
+        pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_yaw_container)
+        file_processing_step.registerListener(pick_ranges_inertia_yaw_container)
+        const pick_ranges_inertia_yaw_title = "Select the time ranges for the inertia (yaw) estimation (front/back and left/right accelerations)"
+        const pick_ranges_inertia_yaw_step = new PickRangeStep(globals, pick_ranges_inertia_yaw_container.container, pick_ranges_inertia_yaw_title, "ranges-inertia-yaw");
+        file_processing_step.registerListener(pick_ranges_inertia_yaw_step)
+        // pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_yaw_step)
+        pick_ranges_inertia_yaw_step.registerListener(pick_ranges_inertia_yaw_container)
+
+
+        const extract_timeframes_thrust_step = new ExtractTimeframesStep(globals, document.body, "ranges-thrust", "thrust-timeframes");
+        file_processing_step.registerListener(extract_timeframes_thrust_step)
+        pick_ranges_thrust_step.registerListener(extract_timeframes_thrust_step)
+
+
+        const find_tau_container = new Spoiler(document.body, "Find Tau");
+        find_tau_container.container.open = true
+        const find_tau_step = new FindTauStep(globals, find_tau_container.container);
+        model_specification_step.registerListener(find_tau_step)
+        extract_timeframes_thrust_step.registerListener(find_tau_step)
+
+        await globals.module;
+
+        console.log("Finished setup")
+        // model_specification_step.maybeTriggerDebugChain()
+
+
+
+        // const m = await Module();
+        // const Flight = m["Flight"];
+        // const load_ulog = m["load_ulog"];
+        // const read_flight = m["read_flight"];
+        // const get_flight_data = m["get_flight_data"];
+        // const log_file_paths = [
+        //     "logs_large/log_63_2024-1-8-16-37-54.ulg",
+        //     "logs_large/log_64_2024-1-8-16-39-44.ulg",
+        //     "logs_large/log_65_2024-1-8-16-40-52.ulg",
+        //     "logs_large/log_66_2024-1-8-16-42-48.ulg",
+        // ]
+        // const log_files = await Promise.all(log_file_paths.map(async log_file_path => await fetchWithProgress(log_file_path, (current, total) => {
+        //     // console.log(`Downloaded ${current} of ${total} bytes`);
+        // })));
+        // const log_file = new Uint8Array(await log_file_response.arrayBuffer());
+
+
+    }
+    document.addEventListener('DOMContentLoaded', main);
+  </script>
+</html>
