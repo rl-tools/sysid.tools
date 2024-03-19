@@ -1,6 +1,5 @@
-import {Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Filler } from '../external/chartjs/auto/auto.js' //#https://cdn.skypack.dev/chart.js@4';
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Filler);
-// import annotationPlugin from 'https://cdn.skypack.dev/chartjs-plugin-annotation@3';
+import {Chart, LineController, ScatterController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Filler, Legend} from 'https://cdn.skypack.dev/chart.js@4';
+Chart.register(LineController, ScatterController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Filler, Legend);
 
 
 function linspace(start, end, num) {
@@ -17,6 +16,9 @@ export class FindTauStep{
         this.globals = globals
         this.parent = parent
         this.container = document.createElement('div')
+        this.container.style.display = "flex"
+        this.container.style.flexDirection = "column"
+        this.container.style.alignItems = "center"
         this.find_tau_header = document.createElement('h1')
         this.find_tau_header.style.textAlign = "center"
         this.find_tau_header.textContent = "Finding the Motor Time Constant (Tau)"
@@ -37,6 +39,25 @@ export class FindTauStep{
         this.options_container.appendChild(this.end_range_label)
         this.options_container.appendChild(this.end_range_input)
 
+        this.progressBarContainer = document.createElement('div');
+        this.progressBarContainer.style.width = '50%';
+        this.progressBarContainer.style.backgroundColor = '#e0e0e0';
+        this.progressBarContainer.style.borderRadius = '8px';
+        this.progressBarContainer.style.position = 'relative';
+        this.progressBarContainer.style.height = '30px';
+        this.progressBarContainer.style.margin = '20px 0';
+
+        this.progressBar = document.createElement('div');
+        this.progressBar.style.height = '100%';
+        this.progressBar.style.width = '0%';
+        this.progressBar.style.backgroundColor = '#4caf50';
+        this.progressBar.style.borderRadius = '8px';
+        this.progressBar.style.textAlign = 'center';
+        this.progressBar.style.lineHeight = '30px';
+        this.progressBar.style.color = 'white';
+        this.progressBar.innerText = '0%';
+
+        this.progressBarContainer.appendChild(this.progressBar);
         this.tau_plot_canvas_container = document.createElement('div')
         this.tau_plot_canvas_container.style.width = "500px"
         this.tau_plot_canvas_container.style.height = "500px"
@@ -44,20 +65,39 @@ export class FindTauStep{
         this.tau_plot_canvas.width = 400
         this.tau_plot_canvas.height = 400
         this.tau_plot_ctx = this.tau_plot_canvas.getContext('2d');
+        const color = 'rgb(0,123,255)'
         this.tau_plot = new Chart(this.tau_plot_ctx, {
-            type: 'line',
+            type: 'scatter',
             data: {
-                labels: [0, 1, 2, 3, 4],
-                datasets: [{
-                    label: 'RMSE',
+                datasets: [
+                {
+                    label: 'Optimal',
                     backgroundColor: 'rgb(255, 99, 132)',
                     borderColor: 'rgb(255, 99, 132)',
-                    data: [0, 1, 2, 3, 4],
-                    pointRadius: 0
-                    // fill: false,
-                }]
+                    data: [
+                        {x: 2, y: 0},
+                        {x: 2, y: 9}
+                    ],
+                    pointRadius: 0,
+                    showLine: true,
+                },
+                {
+                    label: 'RMSE',
+                    backgroundColor: color,
+                    borderColor: color,
+                    data: [{x: 0, y: 0.5}, {x: 1, y: 1}, {x: 2, y: 4}, {x: 3, y: 9}],
+                    pointRadius: 0,
+                    showLine: true,
+                },
+            ]
             },
             options: {
+                plugins: {
+                    legend:{
+                        display: true,
+                        position: 'top'
+                    }
+                },
                 scales: {
                     x: {
                         type: 'linear',
@@ -76,11 +116,12 @@ export class FindTauStep{
                 animations: false
             }
         });
-        // this.tau_plot_canvas_container.style.display = "none"
+        this.tau_plot_canvas_container.style.display = "none"
         this.tau_plot_canvas_container.appendChild(this.tau_plot_canvas)
 
         this.container.appendChild(this.find_tau_header)
         this.container.appendChild(this.options_container)
+        this.container.appendChild(this.progressBarContainer);
         this.container.appendChild(this.tau_plot_canvas_container)
         this.parent.appendChild(this.container)
 
@@ -88,6 +129,12 @@ export class FindTauStep{
         this.listeners = []
         this.model = null
     }
+    updateProgressBar(progress) {
+        const val = Math.round(Math.max(0, Math.min(100, progress)))
+        this.progressBar.style.width = val + '%';
+        this.progressBar.innerText = val + '%';
+    }
+
     registerListener(listener){
         this.listeners.push(listener)
     }
@@ -108,23 +155,56 @@ export class FindTauStep{
 
             const final = () => {
                 this.tau_plot.data.labels = T_ms
-                this.tau_plot.data.datasets[0].data = interval_handle.motor_parameters.map(x=>x.getRMSE())
+                const rmses = interval_handle.motor_parameters.map(x=>x.getRMSE())
+                const data = []
+                let min_rmse = Infinity
+                let min_rmse_i = 0
+                let max_rmse = -Infinity
+                let max_rmse_i = 0
+                for(let t_m_i = 0; t_m_i < T_ms.length; t_m_i++){
+                    const T_m = T_ms[t_m_i]
+                    const rmse = rmses[t_m_i]
+                    data.push({x: T_m, y: rmse})
+                    if(rmse < min_rmse){
+                        min_rmse = rmse
+                        min_rmse_i = t_m_i
+                    }
+                    if(rmse > max_rmse){
+                        max_rmse = rmse
+                        max_rmse_i = t_m_i
+                    }
+                }
+                this.tau_plot.data.datasets[1].data = data
+                this.tau_plot.data.datasets[0].data = [{x: T_ms[min_rmse_i], y: min_rmse}, {x: T_ms[min_rmse_i], y: max_rmse}]
+                this.tau_plot.data.datasets[0].label = `Optimal: T_m = ${T_ms[min_rmse_i].toFixed(3)}s`
                 this.tau_plot_canvas_container.style.display = "block"
             }
 
+            const default_delay = 200
+            let last_update = null
+
             const callback = () => {
+                this.updateProgressBar(current_i / (T_ms.length-1) * 100)
                 const T_m = T_ms[current_i]
                 current_i += 1
-                if(current_i >= T_ms.length){
-                    clearInterval(interval_handle.interval)
-                    final()
-                }
                 const combined = m.combine(flights, T_m)
                 const motor_parameters = m.estimate_motor_parameters(JSON.stringify(this.model), combined, true)
                 interval_handle.motor_parameters.push(motor_parameters)
+                let delay = default_delay
+                if(last_update){
+                    const now = Date.now()
+                    const elapsed = now - last_update
+                    delay = elapsed * 0.1
+                    last_update = now
+                }
+                if(current_i >= T_ms.length){
+                    final()
+                }
+                else{
+                    setTimeout(callback, delay)
+                }
             }
-
-            interval_handle.interval = setInterval(callback, 100)
+            setTimeout(callback, default_delay)
         }
     }
 }

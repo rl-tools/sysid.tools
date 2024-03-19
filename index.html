@@ -6,7 +6,7 @@
     <body>
     </body>
   <script type="module">
-    import Module from '../build/output.mjs';
+    import Module from './blob/build/output.mjs';
     import {fetchWithProgress} from './fetch_with_progress.js';
     import {model as default_model} from './default_model.js';
     import {ModelSpecificationStep} from './steps/1-specify-model.js';
@@ -127,7 +127,7 @@
         await globals.module;
 
         console.log("Finished setup")
-        // model_specification_step.maybeTriggerDebugChain()
+        model_specification_step.maybeTriggerDebugChain()
 
 
 

@@ -1,5 +1,3 @@
-import Module from '../build/output.mjs';
-
 export class ExtractTimeframesStep{
     constructor(globals, parent, event_name, event_output_name){
         this.globals = globals

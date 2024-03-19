@@ -1,4 +1,3 @@
-import {pickRanges} from '../pick_ranges.js';
 import {RangePickerChart} from '../range_picker_chart.js';
 
 const default_ranges = {

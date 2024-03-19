@@ -27,10 +27,10 @@ export class FileSelectionStep{
 
         this.listeners = []
         this.example_files = [
-            "logs_large/log_63_2024-1-8-16-37-54.ulg",
-            "logs_large/log_64_2024-1-8-16-39-44.ulg",
-            "logs_large/log_65_2024-1-8-16-40-52.ulg",
-            "logs_large/log_66_2024-1-8-16-42-48.ulg",
+            "./blob/logs/large/log_63_2024-1-8-16-37-54.ulg",
+            "./blob/logs/large/log_64_2024-1-8-16-39-44.ulg",
+            "./blob/logs/large/log_65_2024-1-8-16-40-52.ulg",
+            "./blob/logs/large/log_66_2024-1-8-16-42-48.ulg",
         ]
     }
     callback(event){
