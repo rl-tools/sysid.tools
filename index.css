@@ -173,3 +173,20 @@ textarea:focus {
     color: rgba(255, 255, 255, 0.5);
     text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
+
+
+.fancy-json-output {
+    font-family: "Open Sans", sans-serif;
+    font-size: 14px;
+    font-weight: normal;
+    background: #f9f9f9;
+    border-radius: 10px;
+    border: 1px solid #7DB9B6;
+    color: #333; 
+    padding: 15px; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-top: 20px; 
+    white-space: pre-wrap; 
+    overflow: auto; 
+    transition: all 0.2s ease-in-out;
+}

@@ -65,6 +65,12 @@ class RangePickerChart{
         this.overlay_canvas.addEventListener('mouseleave', this.endSelection.bind(this));
 
         this.selections = []
+        // this.resizeObserver = new ResizeObserver(entries => {
+        //     for (let entry of entries) {
+        //         this.resizeCanvas();
+        //     }
+        // });
+        // this.resizeObserver.observe(this.container);
     }
     setSelections(selections){
         this.selections = selections
