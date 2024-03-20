@@ -21,7 +21,7 @@ export class PickRangeStep{
         this.title = title
         this.event_name = event_name
         this.container = document.createElement('div')
-        this.pick_thrust_header = document.createElement('h1')
+        this.pick_thrust_header = document.createElement('h3')
         this.pick_thrust_header.style.textAlign = "center"
         this.pick_thrust_header.textContent = "Waiting for files to be processed..."
         this.container.appendChild(this.pick_thrust_header)
@@ -42,10 +42,6 @@ export class PickRangeStep{
             this.parent.removeChild(this.container)
             this.container = document.createElement('div')
             this.container.style.textAlign = "center"
-            this.pick_thrust_header = document.createElement('h1')
-            this.pick_thrust_header.style.textAlign = "center"
-            this.pick_thrust_header.textContent = this.title
-            this.container.appendChild(this.pick_thrust_header)
             const names = event.data.names
             const flights = event.data.flights
             const flight_data = event.data.flight_data

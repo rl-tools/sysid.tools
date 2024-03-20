@@ -19,22 +19,25 @@ export class FindTauStep{
         this.container.style.display = "flex"
         this.container.style.flexDirection = "column"
         this.container.style.alignItems = "center"
-        this.find_tau_header = document.createElement('h1')
-        this.find_tau_header.style.textAlign = "center"
-        this.find_tau_header.textContent = "Finding the Motor Time Constant (Tau)"
         this.options_container = document.createElement('div')
         this.start_range_label = document.createElement('label')
         this.start_range_label.textContent = "Start Range (s):"
+        this.start_range_label.style.marginRight = "10px"
         this.start_range_input = document.createElement('input')
+        this.start_range_input.classList.add("fancy-number-input")
+        // class= type="number" placeholder="seed">
         this.start_range_input.type = "number"
         this.start_range_input.value = 0.005
         this.options_container.appendChild(this.start_range_label)
         this.options_container.appendChild(this.start_range_input)
         this.end_range_label = document.createElement('label')
         this.end_range_label.textContent = "End Range (s):"
+        this.end_range_label.style.marginRight = "10px"
         this.end_range_input = document.createElement('input')
+        this.end_range_input.classList.add("fancy-number-input")
         this.end_range_input.type = "number"
         this.end_range_input.value = 0.2
+        this.options_container.appendChild(document.createElement('br'))
         this.options_container.appendChild(document.createElement('br'))
         this.options_container.appendChild(this.end_range_label)
         this.options_container.appendChild(this.end_range_input)
@@ -119,7 +122,6 @@ export class FindTauStep{
         this.tau_plot_canvas_container.style.display = "none"
         this.tau_plot_canvas_container.appendChild(this.tau_plot_canvas)
 
-        this.container.appendChild(this.find_tau_header)
         this.container.appendChild(this.options_container)
         this.container.appendChild(this.progressBarContainer);
         this.container.appendChild(this.tau_plot_canvas_container)

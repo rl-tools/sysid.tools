@@ -10,10 +10,20 @@ export class ModelSpecificationStep{
         pick_thrust_header.textContent = "Select the time ranges for the thrust curve estimation (up/down accelerations)"
         this.container.appendChild(pick_thrust_header)
         this.model_input = document.createElement('textarea')
-        this.model_input
-        this.model_input.textContent = JSON.stringify(this.default_model, null, 2)
+        if(localStorage.getItem("model") != null){
+            this.model_input.value = JSON.stringify(JSON.parse(localStorage.getItem("model")), null, 2)
+        }
+        else{
+            this.model_input.value = JSON.stringify(this.default_model, null, 2)
+        }
         this.model_input.cols = 100
-        this.model_input.rows = this.model_input.textContent.split("\n").length
+        this.model_input.rows = this.model_input.value.split("\n").length
+        this.model_input_reset = document.createElement('input')
+        this.model_input_reset.type = "button"
+        this.model_input_reset.value = "Reset to Default"
+        this.model_input_reset.classList.add("fancy-button")
+        this.model_input_reset.classList.add("fancy-button-small")
+        this.model_input_reset.style["margin-top"] = "10px"
         this.model_input_submit = document.createElement('input')
         this.model_input_submit.type = "button"
         this.model_input_submit.value = "Set Model"
@@ -23,10 +33,13 @@ export class ModelSpecificationStep{
 
         this.container.appendChild(this.model_input)
         this.container.appendChild(document.createElement('br'))
+        this.container.appendChild(this.model_input_reset)
         this.container.appendChild(this.model_input_submit)
         this.container.appendChild(document.createElement('br'))
 
+        this.model_input_reset.addEventListener('click', this.resetToDefault.bind(this))
         this.model_input_submit.addEventListener('click', this.submit.bind(this))
+
         this.listeners = []
         this.parent.appendChild(this.container)
 
@@ -41,8 +54,24 @@ export class ModelSpecificationStep{
         this.listeners.push(listener)
     }
 
+    resetToDefault(){
+        this.model_input.value = JSON.stringify(this.default_model, null, 2)
+        if(localStorage.getItem("model") != null){
+            localStorage.removeItem("model")
+        }
+    }
+
     submit(){
-        const model = JSON.parse(this.model_input.value)
+        let model = null
+        try {
+            model = JSON.parse(this.model_input.value)
+        } catch (error) {
+        }
+        if(model == null){
+            alert("Invalid JSON")
+            return
+        }
+        localStorage.setItem("model", JSON.stringify(model))
         for(const listener of this.listeners){
             listener.callback({"event": "model", "data": model})
         }

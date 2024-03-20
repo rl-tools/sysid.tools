@@ -128,7 +128,7 @@
         model_specification_step.registerListener(model_specification_container)
         model_specification_container.container.open = true;
 
-        const file_selection_container = new Spoiler(container_body, "File Selection", false, {open_on: ["model"], close_on: ["files"]});
+        const file_selection_container = new Spoiler(container_body, "File Selection", false, {open_on: ["model"]});
         model_specification_step.registerListener(file_selection_container)
         const file_selection_step = new FileSelectionStep(globals, file_selection_container.container);
         model_specification_step.registerListener(file_selection_step)
@@ -137,6 +137,7 @@
         const file_processing_step = new FileProcessingStep(globals, container_body, motor_command_topic);
         model_specification_step.registerListener(file_processing_step)
         file_selection_step.registerListener(file_processing_step)
+        file_processing_step.registerListener(file_selection_step)
 
         const pick_ranges_thrust_container = new Spoiler(container_body, "Pick Ranges (Thrust)", true, {open_on: ["files-processed"], close_on: ["ranges-thrust"]});
         file_processing_step.registerListener(pick_ranges_thrust_container)
@@ -145,7 +146,20 @@
         file_processing_step.registerListener(pick_ranges_thrust_step)
         pick_ranges_thrust_step.registerListener(pick_ranges_thrust_container)
 
-        const pick_ranges_inertia_roll_pitch_container = new Spoiler(container_body, "Pick Ranges (Inertia Roll/Pitch)", true, {open_on: ["ranges-thrust"], close_on: ["ranges-inertia-roll-pitch"]});
+        { // thrust
+            const extract_timeframes_thrust_step = new ExtractTimeframesStep(globals, container_body, "ranges-thrust", "thrust-timeframes");
+            file_processing_step.registerListener(extract_timeframes_thrust_step)
+            pick_ranges_thrust_step.registerListener(extract_timeframes_thrust_step)
+
+            const find_tau_container = new Spoiler(container_body, "Find the Motor Time Constant", false, {open_on: ["model", "thrust-timeframes"]});
+            const find_tau_step = new FindTauStep(globals, find_tau_container.container);
+            model_specification_step.registerListener(find_tau_step)
+            extract_timeframes_thrust_step.registerListener(find_tau_step)
+            model_specification_step.registerListener(find_tau_container)
+            extract_timeframes_thrust_step.registerListener(find_tau_container)
+        }
+
+        const pick_ranges_inertia_roll_pitch_container = new Spoiler(container_body, "Pick Ranges (Inertia Roll/Pitch)", true, {open_on: [], close_on: ["ranges-inertia-roll-pitch"]});
         pick_ranges_thrust_step.registerListener(pick_ranges_inertia_roll_pitch_container)
         file_processing_step.registerListener(pick_ranges_inertia_roll_pitch_container)
         const pick_ranges_inertia_roll_pitch_title = "Select the time ranges for the inertia (roll/pitch) estimation (front/back and left/right accelerations)"
@@ -164,17 +178,8 @@
         pick_ranges_inertia_yaw_step.registerListener(pick_ranges_inertia_yaw_container)
 
 
-        const extract_timeframes_thrust_step = new ExtractTimeframesStep(globals, container_body, "ranges-thrust", "thrust-timeframes");
-        file_processing_step.registerListener(extract_timeframes_thrust_step)
-        pick_ranges_thrust_step.registerListener(extract_timeframes_thrust_step)
 
 
-        const find_tau_container = new Spoiler(container_body, "Find Tau", false, {open_on: ["model", "thrust-timeframes"]});
-        const find_tau_step = new FindTauStep(globals, find_tau_container.container);
-        model_specification_step.registerListener(find_tau_step)
-        extract_timeframes_thrust_step.registerListener(find_tau_step)
-        model_specification_step.registerListener(find_tau_container)
-        extract_timeframes_thrust_step.registerListener(find_tau_container)
 
         await globals.module;
 

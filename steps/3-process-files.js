@@ -27,6 +27,10 @@ export class FileProcessingStep{
             const excitation_metrics = []
             const m = await this.module;
             for(var log_file_i=0; log_file_i < event.data.length; log_file_i++){
+                for(const listener of this.listeners){
+                    listener.callback({"event": "file-processing-progress", "data": {current: log_file_i, current_name: event.data[log_file_i].name, total: event.data.length}})
+                }
+                await new Promise(r => setTimeout(r, 100));
                 const log_file = event.data[log_file_i].data;
                 const log_file_path = event.data[log_file_i].name;
                 names.push(log_file_path)

@@ -55,6 +55,12 @@ export class FileSelectionStep{
                 setTimeout(this.exampleButtonCallback.bind(this), 200)
             }
         }
+        if(event.event == "file-processing-progress"){
+            this.loading_message.innerHTML = `<strong>Loading (${event.data.current+1}/${event.data.total}):</strong> ${event.data.current_name}`;
+        }
+        if(event.event == "files-processed"){
+            this.loading_message.textContent = "Finished loading";
+        }
     }
     async fileChangeCallback(event){
         function readFileAsArrayBuffer(file) {
@@ -73,10 +79,10 @@ export class FileSelectionStep{
             });
         }
         this.loading_message.style.display = "block";
-        const files = event.target.files; 
-        const promises = Array.from(files).map(file => readFileAsArrayBuffer(file));
+        const files_array = Array.from(event.target.files)
+        const files = files_array.sort((a, b) => a.name.localeCompare(b.name)); 
+        const promises = files.map(file => readFileAsArrayBuffer(file));
         const buffers = await Promise.all(promises)
-        this.loading_message.style.display = "none";
         this.sendFiles(buffers);
     }
 
@@ -92,7 +98,6 @@ export class FileSelectionStep{
         }
         this.loading_message.style.display = "block";
         const ulg_log_files = await Promise.all(this.example_files.map(fetchOne))
-        this.loading_message.style.display = "none";
         this.sendFiles(ulg_log_files)
     }
 
