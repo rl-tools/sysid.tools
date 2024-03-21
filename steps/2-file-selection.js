@@ -36,6 +36,7 @@ export class FileSelectionStep{
         this.loading_message = document.createElement('p');
         this.loading_message.textContent = "Loading...";
         this.loading_message.style.display = "none";
+        this.loading_message.style.marginTop = "25px";
         this.container.appendChild(this.loading_message);
         this.parent.appendChild(this.container);
         this.file_input_ghost.addEventListener('change', this.fileChangeCallback.bind(this));

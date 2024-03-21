@@ -4,17 +4,62 @@
     <head>
     </head>
     <body>
-        <div class="container" id="container-body">
-            <div class="info-container" style="margin-bottom: 1px">
-                <div class="info-box">
-                    <h3 style="margin: 2px; padding: 20px; text-align: center;">
-                        System Identification Utility for Quadrotors</h3>
+        <div class="row">
+            <div class="container" id="container-body">
+                <div class="info-container" style="margin-bottom: 1px">
+                    <div class="info-box">
+                        <h3 style="margin: 2px; padding: 20px; text-align: center;">
+                            System Identification Utility for Quadrotors</h3>
+                    </div>
                 </div>
+                <div style="margin-top: 10px; text-align: center;">
+                    <a class="fancy-button fancy-button-small" id="arxiv-button" href="https://arxiv.org/abs/2306.03530">Paper on arXiv</a>
+                    <a class="fancy-button fancy-button-small" id="github-button" href="https://github.com/arplaboratory/data-driven-system-identification">Code on Github</a>
+                    <!-- <a class="github-button" href="https://github.com/RLtools/RLtools" aria-label="Code on Github">Code on Github</a> -->
+                </div>
+
             </div>
-            <div style="text-align: center;">
-                <a class="fancy-button fancy-button-small" id="arxiv-button" href="https://arxiv.org/abs/2306.03530">Paper on arXiv</a>
-                <a class="fancy-button fancy-button-small" id="github-button" href="https://github.com/arplaboratory/data-driven-system-identification">Code on Github</a>
-                <!-- <a class="github-button" href="https://github.com/RLtools/RLtools" aria-label="Code on Github">Code on Github</a> -->
+        </div>
+        <div class="row">
+            <div class="spoiler-outer-container">
+                <div class="spoiler-container">
+                    <details class="info-box spoiler-details" open="true">
+                        <summary>Instructions</summary>
+                        <div class="spoiler-container-padding">
+                            <div style="display: block; width: 100%; text-align: left">
+                                This web app allows you to easily estimate the parameter of a quadrotor based on just short flight data. You need to provide the easy to measure parameters: mass, rotor-positions (FLU frame!), rotor thrust directions (usually all in z direction: <code>[0, 0, 1]</code>) and rotor torque directions (usualy <code>+-[0, 0, 1]</code> depending on the direction of the propeller). 
+                            </br>
+                            </br>
+                                You just need to perform some flights to excite the linear acceleration dynamics (up and down accelerations) and the angular acceleration dyanmics (roll/pitch accelerations and yaw accelerations). Note that only the accelerations are important so these maneuvers can be more or less executed in place (in particular the angular acceleration ones). 
+                            </br>
+                            </br>
+                                For exciting maximum linear accelerations in constraint spaces we recommend to go high, then let it accumulate downwards velocity and then go for the maximum throttle that the space allows. Be careful because it can be easy to underestimate the fact that you can not accelerate downwards faster than gravity. If you have too much upward velocity you might hit the ceiling, even with zero throttle. You can see some example maneuvers in the following video:
+                                <div class="responsive-video-wrapper-wrapper">
+                                    <div class="responsive-video-wrapper">
+                                        <iframe src="https://www.youtube-nocookie.com/embed/G3WGthRx2KE?si=O2GbfXzpe_lVMlOy" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    </div>
+                                </div>
+                                Note that currently only the PX4 ULog format is supported. To collect the log data the uORB topics <code>vehicle_acceleration</code>, <code>vehicle_angular_velocity</code> and <code>actuator_motors</code> should be logged at high rates. For that please configure the high-rate and system identification topics using the <code>SDLOG_PROFILE</code> PX4 parameter (cf. <a href="https://docs.px4.io/v1.14/en/advanced_config/parameter_reference.html">PX4 Parameter Reference</a>).
+                            </br>
+                            </br>
+                                Note that currently (as of <code>v1.14</code>) the <code>vehicle_acceleration</code> can not be configured to be logged at a high rate just by setting parameters. To accomplish this you can add it to the system identification topics as shown in <a href="https://github.com/PX4/PX4-Autopilot/compare/main...jonas-eschmann:PX4-Autopilot-high-freq-logging:main#diff-a58612b34e98d7c47e0b13294ccc0c5077dbab967450a7bc84acd596825a8151L399">this commit</a> and then build PX4 from source. If you can not do the latter you can enable the default logging parameters (which log <code>vehicle_acceleration</code> at <a href="https://github.com/PX4/PX4-Autopilot/blob/f75a92d19977061eba411bd5a134a59f9fb0407e/src/modules/logger/logged_topics.cpp#L112">50 Hz</a>). This system identification method should be able to compensate for to some degree for the low frequency of the acceleration observations because it can use interpolation.
+                            </br>
+                            </br>
+                                After collecting the logs you can select them in the following selection step. Note that all processing is done in your browser, no data is uploaded to any server (in fact this page is statically hosted at <code>github.io</code>). After selecting the files and specifying the model you should be able to pick the time ranges for the thrust curve estimation. The selector will present you all the log files and you should select the parts where you excited the linear acceleration dynamics. After confirming the selection, the motor model should be estimated. First, the motor time constant is estimated and then the thrust curve parameters are presented. 
+                            </br>
+                            </br>
+                                Once you have estimate the motor model you can pick the timeframes where you excited the angular dynamics (roll/pitch) and it will use the motor model and the selected data to estimate the roll and pitch inertia as well as extrapolate the yaw intertia. 
+                            </br>
+                            </br>
+                                In the same manner you can select the timeframes where you excited the yaw dynamics and estimate the torque coefficient of the motors which is based on all the other estimated values. The dependencies are shown in the following, using the same color convention as in the <a href="">paper</a>:
+
+                                <div style="width: 100%; text-align: center;">
+                                    <img src="./blob/figures/dependency-overview.svg" style="width: 100%; max-width: 700px">
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
             </div>
         </div>
     </body>
@@ -64,28 +109,29 @@
                 open_on: [],
                 close_on: []
             }
+            this.row_container = document.createElement('div');
+            this.row_container.classList.add("row")
             this.outer_container = document.createElement('div');
-            this.outer_container.style["box-sizing"] = "border-box";
-            this.outer_container.style["padding-left"] = "20px"
-            this.outer_container.style["padding-right"] = "20px"
-            this.outer_container.style.display = "block";
-            this.outer_container.classList.add('container');
+            this.outer_container.classList.add('spoiler-container');
+            this.outer_container.classList.add('spoiler-outer-container');
             if(full_width){
-                this.outer_container.style.width = "100%";
-                this.outer_container.style["max-width"] = "100%";
+                this.outer_container.classList.add('spoiler-outer-container-full-width');
             }
+            this.padding_container = document.createElement('div');
+            this.padding_container.classList.add('spoiler-container-padding');
             this.container = document.createElement('div');
-            this.container.style.padding = "10px";
             this.details = document.createElement('details');
             this.details.classList.add('info-box');
+            this.details.classList.add('spoiler-details');
             this.details.open = false;
-            this.details.style.padding = "5px";
             const summary = document.createElement('summary');
             summary.textContent = title;
             this.details.appendChild(summary);
             this.outer_container.appendChild(this.details);
-            this.details.appendChild(this.container);
-            parent.appendChild(this.outer_container);
+            this.padding_container.appendChild(this.container);
+            this.details.appendChild(this.padding_container);
+            this.row_container.appendChild(this.outer_container);
+            parent.appendChild(this.row_container);
             this.behavior = {...defaultBehavior, ...behavior}
             this.events_received = []
         }

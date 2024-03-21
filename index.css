@@ -3,33 +3,21 @@
     height: 100%;
     display: block;
 }
-/* .range-picker-chart{
-    width: 100%;
-    height: 100%;
-    display: block;
-} */
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+
+.row {
+    text-align: center;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1em;
+    display: inline-block;
+    text-align: left;
     width: 90%;
     max-width: 900px;
-    margin-bottom: 2em;
 }
 .info-container {
     width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-top: 1em;
-    margin-bottom: 3em;
 }
 
 .info-box{
@@ -189,4 +177,78 @@ textarea:focus {
     white-space: pre-wrap; 
     overflow: auto; 
     transition: all 0.2s ease-in-out;
+}
+
+
+.spoiler-outer-container{
+    display: inline-block;
+    padding-left: 20px;
+    padding-right: 20px;
+    width: 100%;
+    max-width: 900px;
+    padding-top: 20px;
+}
+.spoiler-outer-container-full-width{
+    width: 100%;
+    max-width: 100%;
+}
+.spoiler-container{
+}
+.spoiler-container-padding{
+    padding: 25px;
+    padding-top: 0px;
+    line-height: 1.2;
+}
+.spoiler-details{
+    padding-top: 3px;
+}
+
+.row div{
+    text-align: left;
+}
+
+.responsive-video-wrapper-wrapper{
+    margin: 20px 0;
+}
+.responsive-video-wrapper {
+    margin: 20px 0;
+    position: relative;
+    padding-top: 56.25%; 
+    height: 0;
+}
+
+.responsive-video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+} */
+
+.responsive-video-wrapper {
+    margin: 20px 0;
+    position: relative;
+    padding-top: 56.25%;
+    height: 0;
+    max-width: 640px;
+    margin: auto;
+}
+
+.responsive-video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+code {
+    background-color: #f6f8fa;
+    border-radius: 6px;
+    font-family: monospace;
+    padding: 2px 4px;
+    font-size: 90%;
+    color: #d63384;
+    border: 1px solid #d1d5da;
 }
