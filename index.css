@@ -182,8 +182,6 @@ textarea:focus {
 
 .spoiler-outer-container{
     display: inline-block;
-    padding-left: 20px;
-    padding-right: 20px;
     width: 100%;
     max-width: 900px;
     padding-top: 20px;

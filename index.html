@@ -202,7 +202,7 @@
         file_processing_step.registerListener(extract_timeframes_thrust_step)
         pick_ranges_thrust_step.registerListener(extract_timeframes_thrust_step)
 
-        const find_tau_container = new Spoiler(container_body, "Find the Motor Time Constant", false, {open_on: ["model", "thrust-timeframes"]});
+        const find_tau_container = new Spoiler(container_body, "Estimate the Motor Model (Time Constant & Thrust Curve)", false, {open_on: ["model", "thrust-timeframes"]});
         const find_tau_step = new FindTauStep(globals, find_tau_container.container);
         if(globals.debug){
             find_tau_container.details.open = true;
