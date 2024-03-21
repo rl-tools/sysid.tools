@@ -72,19 +72,19 @@ export class PickRangeStep{
                     },
                     {
                         name: "Thrust Excitation",
-                        timeseries: [{name: "excitation_thrust", data: current_excitation_metrics.thrust}]
+                        timeseries: [{name: "Thrust Excitation", data: current_excitation_metrics.thrust}]
                     },
                     {
                         name: "Torque Excitation (Roll, Pitch)",
                         timeseries: [
-                            {name: "x", data: current_excitation_metrics.torque_x},
-                            {name: "y", data: current_excitation_metrics.torque_y}
+                            {name: "Torque Excitation Roll", data: current_excitation_metrics.torque_x},
+                            {name: "Torque Excitation Pitch", data: current_excitation_metrics.torque_y}
                         ]
                     },
                     {
                         name: "Torque Excitation (Yaw)",
                         timeseries: [
-                            {name: "y", data: current_excitation_metrics.torque_z},
+                            {name: "Torque Excitation (Yaw)", data: current_excitation_metrics.torque_z},
                         ]
                     }
                 ]

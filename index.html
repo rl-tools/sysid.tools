@@ -45,7 +45,11 @@
                                 Note that currently (as of <code>v1.14</code>) the <code>vehicle_acceleration</code> can not be configured to be logged at a high rate just by setting parameters. To accomplish this you can add it to the system identification topics as shown in <a href="https://github.com/PX4/PX4-Autopilot/compare/main...jonas-eschmann:PX4-Autopilot-high-freq-logging:main#diff-a58612b34e98d7c47e0b13294ccc0c5077dbab967450a7bc84acd596825a8151L399">this commit</a> and then build PX4 from source. If you can not do the latter you can enable the default logging parameters (which log <code>vehicle_acceleration</code> at <a href="https://github.com/PX4/PX4-Autopilot/blob/f75a92d19977061eba411bd5a134a59f9fb0407e/src/modules/logger/logged_topics.cpp#L112">50 Hz</a>). This system identification method should be able to compensate for to some degree for the low frequency of the acceleration observations because it can use interpolation.
                             </br>
                             </br>
-                                After collecting the logs you can select them in the following selection step. Note that all processing is done in your browser, no data is uploaded to any server (in fact this page is statically hosted at <code>github.io</code>). After selecting the files and specifying the model you should be able to pick the time ranges for the thrust curve estimation. The selector will present you all the log files and you should select the parts where you excited the linear acceleration dynamics. After confirming the selection, the motor model should be estimated. First, the motor time constant is estimated and then the thrust curve parameters are presented. 
+                                After collecting the logs you can select them in the following selection step. Note that all processing is done in your browser, no data is uploaded to any server (in fact this page is statically hosted at <code>github.io</code>). After selecting the files and specifying the model you should be able to pick the time ranges for the thrust curve estimation. The selector will present you all the log files and you should select the parts where you excited the linear acceleration dynamics. 
+                            </br>
+                            </br>
+                                You can use the shown motor outputs and also the excitation metrics (Thrust, Torque Roll/Pitch and Torque Yaw) to help you select the right timeframes.
+                                After confirming the selection, the motor model should be estimated. First, the motor time constant is estimated and then the thrust curve parameters are presented. 
                             </br>
                             </br>
                                 Once you have estimate the motor model you can pick the timeframes where you excited the angular dynamics (roll/pitch) and it will use the motor model and the selected data to estimate the roll and pitch inertia as well as extrapolate the yaw intertia. 
@@ -212,7 +216,7 @@
         model_specification_step.registerListener(find_tau_container)
         extract_timeframes_thrust_step.registerListener(find_tau_container)
 
-        const pick_ranges_inertia_roll_pitch_container = new Spoiler(container_body, "Pick Ranges (Inertia Roll/Pitch)", true, {open_on: [], close_on: ["ranges-inertia-roll-pitch"]});
+        const pick_ranges_inertia_roll_pitch_container = new Spoiler(container_body, "Pick Ranges (Torque Roll & Pitch)", true, {open_on: [], close_on: ["ranges-inertia-roll-pitch"]});
         pick_ranges_thrust_step.registerListener(pick_ranges_inertia_roll_pitch_container)
         file_processing_step.registerListener(pick_ranges_inertia_roll_pitch_container)
         const pick_ranges_inertia_roll_pitch_title = "Select the time ranges for the inertia (roll/pitch) estimation (front/back and left/right accelerations)"
@@ -237,7 +241,7 @@
         }
         
 
-        const pick_ranges_inertia_yaw_container = new Spoiler(container_body, "Pick Ranges (Yaw)", true, {open_on: [], close_on: ["ranges-inertia-yaw"]});
+        const pick_ranges_inertia_yaw_container = new Spoiler(container_body, "Pick Ranges (Torque Yaw)", true, {open_on: [], close_on: ["ranges-inertia-yaw"]});
         pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_yaw_container)
         file_processing_step.registerListener(pick_ranges_inertia_yaw_container)
         const pick_ranges_inertia_yaw_title = "Select the time ranges for the inertia (yaw) estimation (front/back and left/right accelerations)"
