@@ -231,7 +231,7 @@ export class FindTauStep{
         }
         if(this.model && this.thrust_timeframes){
             const m = await this.module
-            const flights = event.data
+            const flights = this.thrust_timeframes
             let current_i = 0;
             const number_of_steps = this.globals.debug ? 10: 100
             const T_ms = linspace(parseFloat(this.start_range_input.value), parseFloat(this.end_range_input.value), number_of_steps)
@@ -303,6 +303,12 @@ export class FindTauStep{
         const combined = m.combine_motor_model(flights, T_m_optimal, JSON.stringify(this.model), motor_parameters_optimal)
         const data = m.get_combined_flight_data(combined)
         this.plot_predictions(motor_parameters_optimal, data)
+        for(const listener of this.listeners){
+            listener.callback({"event": "motor-model", "data": {
+                T_m: T_m_optimal,
+                motor_parameters: motor_parameters_optimal
+            }})
+        }
     }
     async plot_predictions(motor_parameters, data){
         const mass = this.model["mass"]

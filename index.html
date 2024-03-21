@@ -28,6 +28,7 @@
     import {PickRangeStep} from './steps/4-pick-range.js';
     import {ExtractTimeframesStep} from './steps/5-extract-timeframes.js';
     import {FindTauStep} from './steps/6-find-tau.js';
+    import {EstimateInertiaRollPitchStep} from './steps/7-estimate-inertia-roll-pitch.js';
     const debug = false
     // const debug = true
     const motor_command_topic = "actuator_motors_mux";
@@ -46,7 +47,9 @@
             combine: m["combine"],
             estimate_motor_parameters: m["estimate_motor_parameters"],
             combine_motor_model: m["combine_motor_model"],
-            get_combined_flight_data: m["get_combined_flight_data"]
+            get_combined_flight_data: m["get_combined_flight_data"],
+            estimate_inertia_roll_pitch: m["estimate_inertia_roll_pitch"],
+            estimate_inertia_yaw: m["estimate_inertia_yaw"]
         }
     });
     async function yield_some(){
@@ -141,28 +144,26 @@
         file_selection_step.registerListener(file_processing_step)
         file_processing_step.registerListener(file_selection_step)
 
-        const pick_ranges_thrust_container = new Spoiler(container_body, "Pick Ranges (Thrust)", true, {open_on: ["files-processed"], close_on: ["ranges-thrust"]});
+        const pick_ranges_thrust_container = new Spoiler(container_body, "Pick Ranges (Thrust)", true, {open_on: [], close_on: ["ranges-thrust"]});
         file_processing_step.registerListener(pick_ranges_thrust_container)
         const pick_ranges_thrust_title = "Select the time ranges for the thrust curve estimation (up/down accelerations)"
         const pick_ranges_thrust_step = new PickRangeStep(globals, pick_ranges_thrust_container.container, pick_ranges_thrust_title, "ranges-thrust");
         file_processing_step.registerListener(pick_ranges_thrust_step)
         pick_ranges_thrust_step.registerListener(pick_ranges_thrust_container)
 
-        { // thrust
-            const extract_timeframes_thrust_step = new ExtractTimeframesStep(globals, container_body, "ranges-thrust", "thrust-timeframes");
-            file_processing_step.registerListener(extract_timeframes_thrust_step)
-            pick_ranges_thrust_step.registerListener(extract_timeframes_thrust_step)
+        const extract_timeframes_thrust_step = new ExtractTimeframesStep(globals, container_body, "ranges-thrust", "thrust-timeframes");
+        file_processing_step.registerListener(extract_timeframes_thrust_step)
+        pick_ranges_thrust_step.registerListener(extract_timeframes_thrust_step)
 
-            const find_tau_container = new Spoiler(container_body, "Find the Motor Time Constant", false, {open_on: ["model", "thrust-timeframes"]});
-            const find_tau_step = new FindTauStep(globals, find_tau_container.container);
-            if(globals.debug){
-                find_tau_container.details.open = true;
-            }
-            model_specification_step.registerListener(find_tau_step)
-            extract_timeframes_thrust_step.registerListener(find_tau_step)
-            model_specification_step.registerListener(find_tau_container)
-            extract_timeframes_thrust_step.registerListener(find_tau_container)
+        const find_tau_container = new Spoiler(container_body, "Find the Motor Time Constant", false, {open_on: ["model", "thrust-timeframes"]});
+        const find_tau_step = new FindTauStep(globals, find_tau_container.container);
+        if(globals.debug){
+            find_tau_container.details.open = true;
         }
+        model_specification_step.registerListener(find_tau_step)
+        extract_timeframes_thrust_step.registerListener(find_tau_step)
+        model_specification_step.registerListener(find_tau_container)
+        extract_timeframes_thrust_step.registerListener(find_tau_container)
 
         const pick_ranges_inertia_roll_pitch_container = new Spoiler(container_body, "Pick Ranges (Inertia Roll/Pitch)", true, {open_on: [], close_on: ["ranges-inertia-roll-pitch"]});
         pick_ranges_thrust_step.registerListener(pick_ranges_inertia_roll_pitch_container)
@@ -172,7 +173,24 @@
         file_processing_step.registerListener(pick_ranges_inertia_roll_pitch_step)
         pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_roll_pitch_container)
 
-        const pick_ranges_inertia_yaw_container = new Spoiler(container_body, "Pick Ranges (Inertia Yaw)", true, {open_on: ["ranges-inertia-roll-pitch"], close_on: ["ranges-inertia-yaw"]});
+        { // inertia roll/pitch
+            const extract_timeframes_inertia_roll_pitch_step = new ExtractTimeframesStep(globals, container_body, "ranges-inertia-roll-pitch", "inertia-roll-pitch-timeframes");
+            file_processing_step.registerListener(extract_timeframes_inertia_roll_pitch_step)
+            pick_ranges_inertia_roll_pitch_step.registerListener(extract_timeframes_inertia_roll_pitch_step)
+
+            const estimate_inertia_container = new Spoiler(container_body, "Estimate the Inertia", false, {open_on: ["motor-model", "inertia-roll-pitch-timeframes"]});
+            const estimate_inertia_step = new EstimateInertiaRollPitchStep(globals, estimate_inertia_container.container);
+            if(globals.debug){
+                estimate_inertia_container.details.open = true;
+            }
+            find_tau_step.registerListener(estimate_inertia_step)
+            extract_timeframes_inertia_roll_pitch_step.registerListener(estimate_inertia_step)
+            model_specification_step.registerListener(estimate_inertia_step)
+            find_tau_step.registerListener(estimate_inertia_container)
+            extract_timeframes_inertia_roll_pitch_step.registerListener(estimate_inertia_container)
+        }
+
+        const pick_ranges_inertia_yaw_container = new Spoiler(container_body, "Pick Ranges (Inertia Yaw)", true, {open_on: [], close_on: ["ranges-inertia-yaw"]});
         pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_yaw_container)
         file_processing_step.registerListener(pick_ranges_inertia_yaw_container)
         const pick_ranges_inertia_yaw_title = "Select the time ranges for the inertia (yaw) estimation (front/back and left/right accelerations)"
@@ -180,15 +198,11 @@
         file_processing_step.registerListener(pick_ranges_inertia_yaw_step)
         pick_ranges_inertia_yaw_step.registerListener(pick_ranges_inertia_yaw_container)
 
-
-
-
-
         await globals.module;
 
         console.log("Finished setup")
         if(globals.debug){
-            model_specification_step.maybeTriggerDebugChain()
+            // model_specification_step.maybeTriggerDebugChain()
         }
 
 
