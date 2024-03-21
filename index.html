@@ -28,7 +28,8 @@
     import {PickRangeStep} from './steps/4-pick-range.js';
     import {ExtractTimeframesStep} from './steps/5-extract-timeframes.js';
     import {FindTauStep} from './steps/6-find-tau.js';
-    import {EstimateInertiaRollPitchStep} from './steps/7-estimate-inertia-roll-pitch.js';
+    import {EstimateInertiaStep} from './steps/7-estimate-inertia.js';
+    import {EstimateTorqueCoefficientStep} from './steps/8-estimate-torque-coefficient.js';
     const debug = false
     // const debug = true
     const motor_command_topic = "actuator_motors_mux";
@@ -49,7 +50,7 @@
             combine_motor_model: m["combine_motor_model"],
             get_combined_flight_data: m["get_combined_flight_data"],
             estimate_inertia_roll_pitch: m["estimate_inertia_roll_pitch"],
-            estimate_inertia_yaw: m["estimate_inertia_yaw"]
+            estimate_k_tau: m["estimate_k_tau"]
         }
     });
     async function yield_some(){
@@ -173,24 +174,24 @@
         file_processing_step.registerListener(pick_ranges_inertia_roll_pitch_step)
         pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_roll_pitch_container)
 
-        { // inertia roll/pitch
-            const extract_timeframes_inertia_roll_pitch_step = new ExtractTimeframesStep(globals, container_body, "ranges-inertia-roll-pitch", "inertia-roll-pitch-timeframes");
-            file_processing_step.registerListener(extract_timeframes_inertia_roll_pitch_step)
-            pick_ranges_inertia_roll_pitch_step.registerListener(extract_timeframes_inertia_roll_pitch_step)
+        // inertia
+        const extract_timeframes_inertia_roll_pitch_step = new ExtractTimeframesStep(globals, container_body, "ranges-inertia-roll-pitch", "inertia-roll-pitch-timeframes");
+        file_processing_step.registerListener(extract_timeframes_inertia_roll_pitch_step)
+        pick_ranges_inertia_roll_pitch_step.registerListener(extract_timeframes_inertia_roll_pitch_step)
 
-            const estimate_inertia_container = new Spoiler(container_body, "Estimate the Inertia", false, {open_on: ["motor-model", "inertia-roll-pitch-timeframes"]});
-            const estimate_inertia_step = new EstimateInertiaRollPitchStep(globals, estimate_inertia_container.container);
-            if(globals.debug){
-                estimate_inertia_container.details.open = true;
-            }
-            find_tau_step.registerListener(estimate_inertia_step)
-            extract_timeframes_inertia_roll_pitch_step.registerListener(estimate_inertia_step)
-            model_specification_step.registerListener(estimate_inertia_step)
-            find_tau_step.registerListener(estimate_inertia_container)
-            extract_timeframes_inertia_roll_pitch_step.registerListener(estimate_inertia_container)
+        const estimate_inertia_container = new Spoiler(container_body, "Estimate the Inertia", false, {open_on: ["model", "motor-model", "inertia-roll-pitch-timeframes"]});
+        const estimate_inertia_step = new EstimateInertiaStep(globals, estimate_inertia_container.container);
+        if(globals.debug){
+            estimate_inertia_container.details.open = true;
         }
+        for(const node of [estimate_inertia_step, estimate_inertia_container]){
+            find_tau_step.registerListener(node)
+            extract_timeframes_inertia_roll_pitch_step.registerListener(node)
+            model_specification_step.registerListener(node)
+        }
+        
 
-        const pick_ranges_inertia_yaw_container = new Spoiler(container_body, "Pick Ranges (Inertia Yaw)", true, {open_on: [], close_on: ["ranges-inertia-yaw"]});
+        const pick_ranges_inertia_yaw_container = new Spoiler(container_body, "Pick Ranges (Yaw)", true, {open_on: [], close_on: ["ranges-inertia-yaw"]});
         pick_ranges_inertia_roll_pitch_step.registerListener(pick_ranges_inertia_yaw_container)
         file_processing_step.registerListener(pick_ranges_inertia_yaw_container)
         const pick_ranges_inertia_yaw_title = "Select the time ranges for the inertia (yaw) estimation (front/back and left/right accelerations)"
@@ -198,32 +199,30 @@
         file_processing_step.registerListener(pick_ranges_inertia_yaw_step)
         pick_ranges_inertia_yaw_step.registerListener(pick_ranges_inertia_yaw_container)
 
+        { // torque coefficient
+            const extract_timeframes_inertia_yaw_step = new ExtractTimeframesStep(globals, container_body, "ranges-inertia-yaw", "inertia-yaw-timeframes");
+            file_processing_step.registerListener(extract_timeframes_inertia_yaw_step)
+            pick_ranges_inertia_yaw_step.registerListener(extract_timeframes_inertia_yaw_step)
+
+            const estimate_torque_coeff_container = new Spoiler(container_body, "Estimate the Torque Coefficient (Yaw)", false, {open_on: ["model", "motor-model", "inertia", "inertia-yaw-timeframes"]});
+            const estimate_torque_coeff_step = new EstimateTorqueCoefficientStep(globals, estimate_torque_coeff_container.container);
+            if(globals.debug){
+                estimate_torque_coeff_container.details.open = true;
+            }
+            for(const node of [estimate_torque_coeff_container, estimate_torque_coeff_step]){
+                model_specification_step.registerListener(node)
+                find_tau_step.registerListener(node)
+                estimate_inertia_step.registerListener(node)
+                extract_timeframes_inertia_yaw_step.registerListener(node)
+            }
+        }
+
         await globals.module;
 
         console.log("Finished setup")
         if(globals.debug){
-            // model_specification_step.maybeTriggerDebugChain()
+            model_specification_step.maybeTriggerDebugChain()
         }
-
-
-
-        // const m = await Module();
-        // const Flight = m["Flight"];
-        // const load_ulog = m["load_ulog"];
-        // const read_flight = m["read_flight"];
-        // const get_flight_data = m["get_flight_data"];
-        // const log_file_paths = [
-        //     "logs_large/log_63_2024-1-8-16-37-54.ulg",
-        //     "logs_large/log_64_2024-1-8-16-39-44.ulg",
-        //     "logs_large/log_65_2024-1-8-16-40-52.ulg",
-        //     "logs_large/log_66_2024-1-8-16-42-48.ulg",
-        // ]
-        // const log_files = await Promise.all(log_file_paths.map(async log_file_path => await fetchWithProgress(log_file_path, (current, total) => {
-        //     // console.log(`Downloaded ${current} of ${total} bytes`);
-        // })));
-        // const log_file = new Uint8Array(await log_file_response.arrayBuffer());
-
-
     }
     document.addEventListener('DOMContentLoaded', main);
   </script>

@@ -25,7 +25,6 @@ export class FindTauStep{
         this.start_range_label.style.marginRight = "10px"
         this.start_range_input = document.createElement('input')
         this.start_range_input.classList.add("fancy-number-input")
-        // class= type="number" placeholder="seed">
         this.start_range_input.type = "number"
         this.start_range_input.value = 0.005
         this.options_container.appendChild(this.start_range_label)
@@ -97,6 +96,7 @@ export class FindTauStep{
                 ]
                 },
                 options: {
+                    animation: false,
                     plugins: {
                         legend:{
                             display: true,
@@ -118,7 +118,6 @@ export class FindTauStep{
                             }
                         }
                     },
-                    animations: false
                 }
             });
             this.tau_plot_canvas_container.style.display = "none"

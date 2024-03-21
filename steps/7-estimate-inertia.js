@@ -2,11 +2,18 @@ import {Chart, LineController, ScatterController, LineElement, PointElement, Lin
 Chart.register(LineController, ScatterController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Filler, Legend);
 
 
-class InertiaChart{
-    constructor(label){
+export class InertiaChart{
+    constructor(globals, label){
+        this.globals = globals
+        this.container = document.createElement('div')
+        this.container.style.display = "inline-block"
+        this.container.style.width = "500px"
+        // this.container.style.height = "500px"
+        this.heading = document.createElement('h3')
+        this.heading.textContent = label
+        this.container.appendChild(this.heading)
         this.plot_canvas_container = document.createElement('div')
-        this.plot_canvas_container.style.width = "500px"
-        this.plot_canvas_container.style.height = "500px"
+        this.container.appendChild(this.plot_canvas_container)
         this.plot_canvas = document.createElement('canvas')
         this.plot_canvas.width = 400
         this.plot_canvas.height = 400
@@ -32,12 +39,15 @@ class InertiaChart{
                     backgroundColor: color,
                     borderColor: color,
                     data: [{x: 0, y: 0.5}, {x: 1, y: 1}, {x: 2, y: 4}, {x: 3, y: 9}],
-                    pointRadius: 0.5,
+                    pointRadius: 0.1,
                     // showLine: true,
                 },
             ]
             },
             options: {
+                animation: {
+                    duration: 0,
+                },
                 plugins: {
                     legend:{
                         display: true,
@@ -59,19 +69,21 @@ class InertiaChart{
                         }
                     }
                 },
-                animations: false
             }
         });
-        this.plot_canvas_container.style.display = "none"
+        this.plot.options.animation = false; // disables all animations
+        if(!this.globals.debug){
+            this.container.style.display = "none"
+        }
         this.plot_canvas_container.appendChild(this.plot_canvas)
     }
     getContainer(){
-        return this.plot_canvas_container
+        return this.container
     }
     display(enable_flag){
         if(enable_flag){
             this.plot.update()
-            this.plot_canvas_container.style.display = "block"
+            this.container.style.display = "inline-block"
             this.plot.update()
         }
         else{
@@ -82,35 +94,41 @@ class InertiaChart{
 
 
 
-export class EstimateInertiaRollPitchStep{
+export class EstimateInertiaStep{
     constructor(globals, parent){
         this.globals = globals 
         this.parent = parent
         this.model = null
         this.motor_model = null
         this.inertia_roll_pitch_timeframes = null
-        // this.inertia_ratio = 1.879
         this.listeners = []
 
 
         this.container = document.createElement('div')
-        this.container.style.display = "flex"
-        this.container.style.flexDirection = "column"
-        this.container.style.alignItems = "center"
+        this.container.style.textAlign = "center"
+        // this.container.style.display = "flex"
+        // this.container.style.flexDirection = "column"
+        // this.container.style.alignItems = "center"
+
+        this.inertia_ratio_label = document.createElement('label')
+        this.inertia_ratio_label.textContent = "Inertia Ratio:"
+        this.inertia_ratio_label.title = "2*I_zz / (I_xx + I_yy)"
+        this.inertia_ratio_label.style.marginRight = "10px"
+        this.inertia_ratio_input = document.createElement('input')
+        this.inertia_ratio_input.classList.add("fancy-number-input")
+        this.inertia_ratio_input.type = "number"
+        this.inertia_ratio_input.value = 1.879
+        this.container.appendChild(this.inertia_ratio_label)
+        this.container.appendChild(this.inertia_ratio_input)
+        this.container.appendChild(document.createElement('br'))
 
         this.inertia_plots = [
-            new InertiaChart("Roll"),
-            new InertiaChart("Pitch")
+            new InertiaChart(this.globals, "Roll"),
+            new InertiaChart(this.globals, "Pitch")
         ]
 
-        this.roll_heading = document.createElement('h3')
-        this.roll_heading.textContent = "Roll"
-        this.container.appendChild(this.roll_heading)
         this.container.appendChild(this.inertia_plots[0].getContainer())
         this.container.appendChild(document.createElement('br'))
-        this.pitch_heading = document.createElement('h3')
-        this.pitch_heading.textContent = "Pitch"
-        this.container.appendChild(this.pitch_heading)
         this.container.appendChild(this.inertia_plots[1].getContainer())
 
         this.parent.appendChild(this.container)
@@ -136,12 +154,14 @@ export class EstimateInertiaRollPitchStep{
             const inertia = m.estimate_inertia_roll_pitch(combined)
             const data = m.get_combined_flight_data(combined)
             console.log(inertia)
+            const I_zz = (inertia.I_xx + inertia.I_yy) * parseFloat(this.inertia_ratio_input.value) / 2
+            console.log("I_zz: ", I_zz)
 
             this.plot(data["pre_torque_geometric"][0], inertia.I_xx, data["domega"][0], this.inertia_plots[0], "x")
             this.plot(data["pre_torque_geometric"][1], inertia.I_yy, data["domega"][1], this.inertia_plots[1], "y")
 
             for(const listener of this.listeners){
-                listener.callback({"event": "inertia-roll-pitch", "data": inertia})
+                listener.callback({"event": "inertia", "data": {I_xx: inertia.I_xx, I_yy: inertia.I_yy, I_zz: I_zz}})
             }
         }
     }
