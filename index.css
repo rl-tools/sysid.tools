@@ -81,11 +81,10 @@
 
 summary{
     cursor: pointer;
-    padding: 10px;
+    padding: 15px;
     font-weight: bold;
     outline: none;
     border-radius: 20px 20px 0 0; /* Match the info-box border-radius but flat at the bottom */
-    margin: 10px
 }
 
 /* When details is open, apply different styles */

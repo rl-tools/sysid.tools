@@ -31,6 +31,8 @@ export class PickRangeStep{
         if(globals.debug){
             this.ranges = default_ranges[event_name]
         }
+        this.resize_canvas_functions = []
+        this.resize_observer = null
     }
 
     registerListener(listener){
@@ -47,7 +49,7 @@ export class PickRangeStep{
             const flight_data = event.data.flight_data
             const excitation_metrics = event.data.excitation_metrics
             this.range_pickers = []
-            const resize_canvas_functions = []
+            this.resize_canvas_functions = []
             for(var log_file_i=0; log_file_i < flight_data.length; log_file_i++){
                 const current_excitation_metrics = excitation_metrics[log_file_i];
                 const current_flight_data = flight_data[log_file_i];
@@ -95,7 +97,10 @@ export class PickRangeStep{
                     range_picker_chart.resizeCanvas(dpr);
                 }
                 window.addEventListener('resize', resizeCanvas);
-                resize_canvas_functions.push(resizeCanvas)
+
+                
+
+                this.resize_canvas_functions.push(resizeCanvas)
             }
             const range_input_submit = document.createElement('input')
             range_input_submit.type = "button"
@@ -111,9 +116,15 @@ export class PickRangeStep{
                 this.setRanges(this.ranges)
             }
 
-            for(const resize_canvas_function of resize_canvas_functions){
+            for(const resize_canvas_function of this.resize_canvas_functions){
                 resize_canvas_function()
             }
+            this.resize_observer = new ResizeObserver((entries) => {
+                for(const resize_canvas_function of this.resize_canvas_functions){
+                    resize_canvas_function()
+                }
+            })
+            this.resize_observer.observe(this.container)
 
             if(this.globals.debug){
                 setTimeout(()=>{
