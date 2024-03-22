@@ -96,7 +96,6 @@
     spoiler_instructions.addEventListener("toggle", (event) => {
         localStorage.setItem("instructions_closed", !spoiler_instructions.open);
     })
-    const motor_command_topic = "actuator_motors_mux";
     const globals = {debug}
     globals["module"] = Module().then(m =>{
         return {
@@ -206,7 +205,7 @@
         model_specification_step.registerListener(file_selection_step)
         file_selection_step.registerListener(file_selection_container)
 
-        const file_processing_step = new FileProcessingStep(globals, container_body, motor_command_topic);
+        const file_processing_step = new FileProcessingStep(globals, container_body);
         model_specification_step.registerListener(file_processing_step)
         file_selection_step.registerListener(file_processing_step)
         file_processing_step.registerListener(file_selection_step)

@@ -84,7 +84,7 @@ export class FileSelectionStep{
         const files = files_array.sort((a, b) => a.name.localeCompare(b.name)); 
         const promises = files.map(file => readFileAsArrayBuffer(file));
         const buffers = await Promise.all(promises)
-        this.sendFiles(buffers);
+        this.sendFiles(buffers, "actuator_motors");
     }
 
     async exampleButtonCallback(){
@@ -99,16 +99,16 @@ export class FileSelectionStep{
         }
         this.loading_message.style.display = "block";
         const ulg_log_files = await Promise.all(this.example_files.map(fetchOne))
-        this.sendFiles(ulg_log_files)
+        this.sendFiles(ulg_log_files, "actuator_motors_mux")
     }
 
     registerListener(listener){
         this.listeners.push(listener)
     }
-    sendFiles(files){
+    sendFiles(files, actuator_motors_topic){
         console.log("Sending files: ", files)
         for(const listener of this.listeners){
-            listener.callback({"event": "files", "data": files})
+            listener.callback({"event": "files", "data": {files, actuator_motors_topic}})
         }
     }
 }
