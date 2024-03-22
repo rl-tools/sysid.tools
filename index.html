@@ -23,7 +23,7 @@
         <div class="row">
             <div class="spoiler-outer-container">
                 <div class="spoiler-container">
-                    <details class="info-box spoiler-details" open="true">
+                    <details class="info-box spoiler-details" id="spoiler-instructions">
                         <summary>Instructions</summary>
                         <div class="spoiler-container-padding">
                             <div style="display: block; width: 100%; text-align: left">
@@ -81,6 +81,21 @@
     import {EstimateTorqueCoefficientStep} from './steps/8-estimate-torque-coefficient.js';
     const debug = false
     // const debug = true
+    const spoiler_instructions = document.getElementById("spoiler-instructions");
+    if(localStorage.getItem("instructions_closed")){
+        if(localStorage.getItem("instructions_closed") === "true"){
+            spoiler_instructions.open = false;
+        }
+        else{
+            spoiler_instructions.open = true;
+        }
+    }
+    else{
+        spoiler_instructions.open = true;
+    }
+    spoiler_instructions.addEventListener("toggle", (event) => {
+        localStorage.setItem("instructions_closed", !spoiler_instructions.open);
+    })
     const motor_command_topic = "actuator_motors_mux";
     const globals = {debug}
     globals["module"] = Module().then(m =>{
@@ -177,6 +192,7 @@
         }
     }
     async function main() {
+
         const container_body = document.body; //document.getElementById("container-body");
 
         const model_specification_container = new Spoiler(container_body, "Model Specification", false, {close_on: ["model"]});

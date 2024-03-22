@@ -135,19 +135,18 @@ export class PickRangeStep{
                 }, 200)
             }
 
-            let file_ranges = []
-            while(file_ranges.length == 0){
-                await new Promise((resolve) => {
-                    range_input_submit.onclick = resolve;
-                })
-                file_ranges = this.getRanges()
+            range_input_submit.addEventListener('click', ()=>{
+                const file_ranges = this.getRanges()
                 if(file_ranges.length == 0){
                     alert("Please select at least one range")
                 }
-            }
-            for(const listener of this.listeners){
-                listener.callback({"event": this.event_name, "data": file_ranges})
-            }
+                else{
+                    for(const listener of this.listeners){
+                        listener.callback({"event": this.event_name, "data": file_ranges})
+                    }
+                }
+
+            })
         }
     }
     getRanges(){

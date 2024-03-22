@@ -6,6 +6,8 @@ export class ExtractTimeframesStep{
         this.event_output_name = event_output_name
         this.module = globals.module
         this.listeners = []
+        this.files = null
+        this.ranges = null
     }
     registerListener(listener){
         this.listeners.push(listener)
