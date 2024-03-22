@@ -49,7 +49,7 @@
                             </br>
                             </br>
                                 You can use the shown motor outputs and also the excitation metrics (Thrust, Torque Roll/Pitch and Torque Yaw) to help you select the right timeframes.
-                                After confirming the selection, the motor model should be estimated. First, the motor time constant is estimated and then the thrust curve parameters are presented. 
+                                After confirming the selection, you can start the motor model estimation. Here you can select the exponents (zeroth-, first- and second-order) for the thrust curve estimation as well as the range for the MAP estimate of the time constant and the resolution/number of steps. If your linear acceleration data covers the full range from zero to full throttle you should be able to fit a good thrust curve using all three components. Sometimes, if the data does not cover e.g. the low thrust regime well, it can make sense to only fit the second order component (or first and second order). This effectively places a prior at <code>f(0) = 0</code> to make up for the lack of data. After confirming the setup, the motor time constant is estimated and then the thrust curve parameters are presented. 
                             </br>
                             </br>
                                 Once you have estimate the motor model you can pick the timeframes where you excited the angular dynamics (roll/pitch) and it will use the motor model and the selected data to estimate the roll and pitch inertia as well as extrapolate the yaw intertia. 

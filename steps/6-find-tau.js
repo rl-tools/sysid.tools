@@ -20,6 +20,32 @@ export class FindTauStep{
         this.container.style.flexDirection = "column"
         this.container.style.alignItems = "center"
         this.options_container = document.createElement('div')
+        this.exponent_label = document.createElement('label')
+        this.exponent_label.innerHTML = "<p>Exponents (<b>a</b> + <b>b</b>x + <b>c</b>x^2):</p>"
+        this.options_container.appendChild(this.exponent_label)
+        this.exponent_checkboxes = []
+        for(let i=0; i<3; i++){
+            const name = 'exponent_checkbox_'+i
+            const checkboxContainer = document.createElement('div');
+            checkboxContainer.setAttribute('class', 'checkbox-container');
+            const label = document.createElement('label');
+            label.setAttribute('for', name);
+            label.setAttribute('class', 'checkbox-label');
+            const input = document.createElement('input');
+            input.setAttribute('type', 'checkbox');
+            input.setAttribute('id', name);
+            input.setAttribute('class', 'checkbox-input');
+            input.checked = true
+            const span = document.createElement('span');
+            span.setAttribute('class', 'checkbox-custom');
+            label.appendChild(input);
+            label.appendChild(span);
+            label.appendChild(document.createTextNode(` ${i == 0 ? 'a' : i == 1 ? 'b' : 'c'}`));
+            checkboxContainer.appendChild(label);
+            this.options_container.appendChild(checkboxContainer);
+            this.exponent_checkboxes.push(input)
+        }
+        this.options_container.appendChild(document.createElement('br'))
         this.start_range_label = document.createElement('label')
         this.start_range_label.textContent = "Start Range (s):"
         this.start_range_label.style.marginRight = "10px"
@@ -29,6 +55,8 @@ export class FindTauStep{
         this.start_range_input.value = 0.005
         this.options_container.appendChild(this.start_range_label)
         this.options_container.appendChild(this.start_range_input)
+        this.end_range_container = document.createElement('div')
+        this.end_range_container.style.paddingTop = "10px"
         this.end_range_label = document.createElement('label')
         this.end_range_label.textContent = "End Range (s):"
         this.end_range_label.style.marginRight = "10px"
@@ -36,10 +64,34 @@ export class FindTauStep{
         this.end_range_input.classList.add("fancy-number-input")
         this.end_range_input.type = "number"
         this.end_range_input.value = 0.2
+        this.end_range_container.appendChild(this.end_range_label)
+        this.end_range_container.appendChild(this.end_range_input)
+        this.options_container.appendChild(this.end_range_container)
+
+        this.step_range_container = document.createElement('div')
+        this.step_range_container.style.paddingTop = "10px"
+        this.step_range_label = document.createElement('label')
+        this.step_range_label.textContent = "Number of steps:"
+        this.step_range_label.style.marginRight = "10px"
+        this.step_range_input = document.createElement('input')
+        this.step_range_input.classList.add("fancy-number-input")
+        this.step_range_input.type = "number"
+        this.step_range_input.value =  this.globals.debug ? 10: 100
+        this.step_range_container.appendChild(this.step_range_label)
+        this.step_range_container.appendChild(this.step_range_input)
+        this.options_container.appendChild(this.step_range_container)
+
+        this.submit_button = document.createElement('input')
+        this.submit_button.type = "button"
+        this.submit_button.value = "Estimate Motor Model"
+        this.submit_button.classList.add("fancy-button")
+        this.submit_button.classList.add("fancy-button-small")
+        this.submit_button.style.display = "none"
+        this.submit_button.style.marginTop = "20px"
+        this.submit_button.addEventListener('click', this.estimate.bind(this))
+
         this.options_container.appendChild(document.createElement('br'))
-        this.options_container.appendChild(document.createElement('br'))
-        this.options_container.appendChild(this.end_range_label)
-        this.options_container.appendChild(this.end_range_input)
+        this.options_container.appendChild(this.submit_button)
 
         this.progressBarContainer = document.createElement('div');
         this.progressBarContainer.style.width = '50%';
@@ -229,72 +281,85 @@ export class FindTauStep{
             this.thrust_timeframes = event.data
         }
         if(this.model && this.thrust_timeframes){
-            const m = await this.module
-            const flights = this.thrust_timeframes
-            let current_i = 0;
-            const number_of_steps = this.globals.debug ? 10: 100
-            const T_ms = linspace(parseFloat(this.start_range_input.value), parseFloat(this.end_range_input.value), number_of_steps)
-
-            const interval_handle = {motor_parameters:[]}
-
-            const final = () => {
-                this.tau_plot.data.labels = T_ms
-                const rmses = interval_handle.motor_parameters.map(x=>x.getRMSE())
-                const data = []
-                let min_rmse = Infinity
-                let min_rmse_i = 0
-                let max_rmse = -Infinity
-                let max_rmse_i = 0
-                for(let t_m_i = 0; t_m_i < T_ms.length; t_m_i++){
-                    const T_m = T_ms[t_m_i]
-                    const rmse = rmses[t_m_i]
-                    data.push({x: T_m, y: rmse})
-                    if(rmse < min_rmse){
-                        min_rmse = rmse
-                        min_rmse_i = t_m_i
-                    }
-                    if(rmse > max_rmse){
-                        max_rmse = rmse
-                        max_rmse_i = t_m_i
-                    }
-                }
-                const T_m_optimal = T_ms[min_rmse_i]
-                const motor_parameters_optimal = interval_handle.motor_parameters[min_rmse_i]
-                this.tau_plot.data.datasets[1].data = data
-                this.tau_plot.data.datasets[0].data = [{x: T_ms[min_rmse_i], y: min_rmse}, {x: T_ms[min_rmse_i], y: max_rmse}]
-                this.tau_plot.data.datasets[0].label = `Optimal: T_m = ${T_m_optimal.toFixed(3)}s`
-                this.tau_plot.update()
-                this.tau_plot_canvas_container.style.display = "block"
-                this.tau_plot.update()
-                this.epilogue(flights, T_m_optimal, motor_parameters_optimal)
-            }
-
-            const default_delay = 200
-            let last_update = null
-
-            const callback = () => {
-                this.updateProgressBar(current_i / (T_ms.length-1) * 100)
-                const T_m = T_ms[current_i]
-                current_i += 1
-                const combined = m.combine(flights, T_m)
-                const motor_parameters = m.estimate_motor_parameters(JSON.stringify(this.model), combined, true)
-                interval_handle.motor_parameters.push(motor_parameters)
-                let delay = default_delay
-                if(last_update){
-                    const now = Date.now()
-                    const elapsed = now - last_update
-                    delay = elapsed * 0.1
-                    last_update = now
-                }
-                if(current_i >= T_ms.length){
-                    final()
-                }
-                else{
-                    setTimeout(callback, delay)
-                }
-            }
-            setTimeout(callback, default_delay)
+            this.submit_button.style.display = "block"
         }
+    }
+
+    async estimate(){
+        this.submit_button.disabled = true
+        const m = await this.module
+        const flights = this.thrust_timeframes
+        let current_i = 0;
+        const number_of_steps = parseInt(this.step_range_input.value)
+        const T_ms = linspace(parseFloat(this.start_range_input.value), parseFloat(this.end_range_input.value), number_of_steps)
+
+        const interval_handle = {motor_parameters:[]}
+
+        const final = () => {
+            this.tau_plot.data.labels = T_ms
+            const rmses = interval_handle.motor_parameters.map(x=>x.getRMSE())
+            const data = []
+            let min_rmse = Infinity
+            let min_rmse_i = 0
+            let max_rmse = -Infinity
+            let max_rmse_i = 0
+            for(let t_m_i = 0; t_m_i < T_ms.length; t_m_i++){
+                const T_m = T_ms[t_m_i]
+                const rmse = rmses[t_m_i]
+                data.push({x: T_m, y: rmse})
+                if(rmse < min_rmse){
+                    min_rmse = rmse
+                    min_rmse_i = t_m_i
+                }
+                if(rmse > max_rmse){
+                    max_rmse = rmse
+                    max_rmse_i = t_m_i
+                }
+            }
+            const T_m_optimal = T_ms[min_rmse_i]
+            const motor_parameters_optimal = interval_handle.motor_parameters[min_rmse_i]
+            this.tau_plot.data.datasets[1].data = data
+            this.tau_plot.data.datasets[0].data = [{x: T_ms[min_rmse_i], y: min_rmse}, {x: T_ms[min_rmse_i], y: max_rmse}]
+            this.tau_plot.data.datasets[0].label = `Optimal: T_m = ${T_m_optimal.toFixed(3)}s`
+            this.tau_plot.update()
+            this.tau_plot_canvas_container.style.display = "block"
+            this.tau_plot.update()
+            this.epilogue(flights, T_m_optimal, motor_parameters_optimal)
+            this.submit_button.disabled = false
+        }
+
+        const default_delay = 200
+        let last_update = null
+
+        const callback = () => {
+            this.updateProgressBar(current_i / (T_ms.length-1) * 100)
+            const T_m = T_ms[current_i]
+            current_i += 1
+            const combined = m.combine(flights, T_m)
+            const zeroth_order = this.exponent_checkboxes[0].checked
+            const first_order = this.exponent_checkboxes[1].checked
+            const second_order = this.exponent_checkboxes[2].checked
+            if(!zeroth_order && !first_order && !second_order){
+                alert("Please select at least one exponent")
+                return
+            }
+            const motor_parameters = m.estimate_motor_parameters(JSON.stringify(this.model), combined, true, zeroth_order, first_order, second_order)
+            interval_handle.motor_parameters.push(motor_parameters)
+            let delay = default_delay
+            if(last_update){
+                const now = Date.now()
+                const elapsed = now - last_update
+                delay = elapsed * 0.1
+                last_update = now
+            }
+            if(current_i >= T_ms.length){
+                final()
+            }
+            else{
+                setTimeout(callback, delay)
+            }
+        }
+        setTimeout(callback, default_delay)
     }
 
     async epilogue(flights, T_m_optimal, motor_parameters_optimal){
