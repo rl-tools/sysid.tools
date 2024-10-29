@@ -68,6 +68,15 @@
         </div>
     </body>
   <script type="module">
+    window.onerror = function (message, source, lineno, colno, error) {
+        alert(`Error: ${message}\nSource: ${source}\nLine: ${lineno}, Column: ${colno}\nStack: ${error?.stack || 'N/A'}`);
+        return true;
+    };
+
+    window.onunhandledrejection = function (event) {
+        alert(`${event.reason}`);
+        event.preventDefault();
+    };
     import Module from './blob/build/output.mjs';
     import {fetchWithProgress} from './fetch_with_progress.js';
     import {model as default_model} from './default_model.js';

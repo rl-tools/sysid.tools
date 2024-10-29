@@ -90,6 +90,9 @@ export class FileSelectionStep{
     async exampleButtonCallback(){
         async function fetchOne(file_path){
             const response = await fetch(file_path)
+            if(!response.ok){
+                throw new Error(`Failed to fetch ${file_path}`)
+            }
             const arrayBuffer = await response.arrayBuffer()
             const buffer = new Uint8Array(arrayBuffer)
             return {
