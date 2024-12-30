@@ -84,7 +84,8 @@ export class FileSelectionStep{
         const files = files_array.sort((a, b) => a.name.localeCompare(b.name)); 
         const promises = files.map(file => readFileAsArrayBuffer(file));
         const buffers = await Promise.all(promises)
-        this.sendFiles(buffers, "actuator_motors");
+        const use_multiplexer_output = new URL(window.location.href).searchParams.get("useMultiplexerOutput") == "true"
+        this.sendFiles(buffers, use_multiplexer_output ? "actuator_motors_mux" : "actuator_motors");
     }
 
     async exampleButtonCallback(){
